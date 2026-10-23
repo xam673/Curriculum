@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from app.models import Role
+from typing import Literal
 
 COURSE_CODE = r"^\d{7}$"   # Chula course codes are 7 digits
 
@@ -50,3 +51,61 @@ class CourseOut(BaseModel):
     credits: int
     prerequisites: list[str]
     corequisites: list[str]
+
+
+# ----- Grades (FR-06) -----
+GradeLetter = Literal["A", "B+", "B", "C+", "C", "D+", "D", "F", "W", "S", "U", "V"]
+
+
+class GradeCreate(BaseModel):
+    course_code: str = Field(pattern=COURSE_CODE)
+    academic_year: int = Field(ge=2500, le=2700)   # Buddhist year, e.g. 2567
+    term: int = Field(ge=1, le=3)
+    grade: GradeLetter
+
+
+class GradeUpdate(BaseModel):
+    grade: GradeLetter
+
+
+class GradeOut(BaseModel):
+    id: int
+    course_code: str
+    course_name: str
+    credits: int
+    academic_year: int
+    term: int
+    grade: str
+    category_id: int | None
+    category_name: str | None
+
+
+# ----- Categories & progress (FR-03, FR-04) -----
+class CategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    required_credits: int
+
+
+class CategoryAssign(BaseModel):
+    category_id: int
+
+
+class CategoryProgress(BaseModel):
+    category_id: int
+    name: str
+    required_credits: int
+    earned_credits: int
+    percent: float
+    courses: list[str]
+
+
+class ProgressOut(BaseModel):
+    curriculum_name: str
+    gpax: float | None
+    total_required: int
+    total_earned: int
+    overall_percent: float
+    categories: list[CategoryProgress]
+    unassigned_courses: list[str]
